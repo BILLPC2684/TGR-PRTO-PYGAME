@@ -12,7 +12,7 @@ Offical ROMs: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn'
 3rd Party ROMS: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn't setted up yet! [404]
 
 # Is the current build runnable? (will update)
-## For Build: v0.0.52e Alpha (goal: v0.0.7Xx Alpha)
+## For Build: v0.0.42e Alpha (goal: v0.0.7Xx Alpha)
  - Syntax Errors:   `No`       ...
  - Runnable Build:  `Maybe`    [Functional, working on it...]
  - Stable CPU EMU:  `Maybe`    (Not Finihsed Implementing Yet!!)
