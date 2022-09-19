@@ -1,9 +1,9 @@
-from pygame import *
+from pygame import * #Required for User/Controller Inputs
 # MAKE SURE ALL VARIBLES AND COMMAS(,) ARE CORRECT! #
 
 emulation = [
  ## Debug Mode ##
- True, # True/False
+ False, # True/False
 ]
 
 video = [

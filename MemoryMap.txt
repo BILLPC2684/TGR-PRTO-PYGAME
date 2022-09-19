@@ -1,13 +1,39 @@
 .__________.
-|MEMORY_MAP|___________________________________________.
-|Name:"."."."."Length:"."."Starting:"."Ending:"."Size:"|
-|\ROM BANK0: . 0x0800000 > 0x0000000 - 0x07FFFFF[. 8MB]|
-|\ROM BANK1: . 0x0800000 > 0x0800000 - 0x0FFFFFF[. 8MB]|
-|\SAV: . . . . 0x0800000 > 0x1000000 - 0x17FFFFF[. 8MB]|
-|\Work RAM:. . 0x7fbfe00 > 0x1800000 - 0x97BFDFF[112MB]|
-|\Stack Mem: . 0x0040000 > 0x97BFE00 - 0x97FFDFF[256KB]|
-|\Static Mem:. 0x0000200 > 0x97BFE00 - 0x97FFFFF[512BT]|
-|\VRAM:. . . . 0x4000000 > 0x9800000 - 0xD7FFFFF[.64MB]|
-|\TOTAL: . . . 0xD800000 . . . . . . . . . . . . . . . |
-|______________________________________________________|
+|MEMORY_MAP|=======================._____________________.
+|Name:"."."."."Length:"."."Starting:"."Ending:"."Size:"""|
+|\ROM BANK0: . 0x0800000 > 0x0000000 - 0x07FFFFF[__8__MB]|
+|\ROM BANK1: . 0x0800000 > 0x0800000 - 0x0FFFFFF[__8__MB]|
+|\SAV: . . . . 0x0800000 > 0x1000000 - 0x17FFFFF[__8__MB]|
+|\Work RAM:. . 0x7fbfe00 > 0x1800000 - 0x97BFDFF[127.9MB]|
+|\Stack Mem: . 0x0040000 > 0x97BFE00 - 0x97FFDFF[256__KB]|
+|\Static Mem:. 0x0000200 > 0x97BFE00 - 0x97FFFFF[512__BT]|
+|\VRAM:. . . . 0x4000000 > 0x9800000 - 0xD7FFFFF[_64__MB]|
+|\TOTAL: . . . 0xD800000 . . . . . . . . . . . . . . . . |
+|________________________________________________________|
+           ._______________________.
+.==========|OAM_512_Sprites_Objects|_____________________.
+|Byte[1]."."Byte[0]""""""""""""""""|4"bytes"*"512"="0x800|_________________.
+|\7654 3210 \7654 3210             '"""""""""""""""""""""\ - BIT Not Used  |
+|\---- ---X \XXXX XXXX SpriteID . [____0-__511] (0x01FF) \ X BIT Used      |
+|\--XX XXX- \---- ---- ColorPallet[____0-___31] (0x001F) \ = BIT Unavaible |
+|\-X-- ---- \---- ---- Flip X . . [____0-____1] (0x0001) \_________________|
+|\X--- ---- \---- ---- Flip Y . . [____0-____1] (0x0001) |
+|                                                        |
+|Byte[3]. . Byte[2]                                      |
+|\7654 3210 \7654 3210                                   |
+|\---- ---- \---- --XX [UNUSED] . [____0-____3] (0x0003) |
+|\---- ---- \--XX XX-- Layer. . . [____0-___15] (0x000F) |
+|\---- -XXX \XX-- ---- Width. . . [____0-___31] (0x001F) |
+|\XXXX X--- \---- ---- Height . . [____0-___31] (0x001F) |
+|                                                        |
+|Byte[5]. . Byte[4]                                      |
+|\7654 3210 \7654 3210                                   |
+|\XXXX XXXX \XXXX XXXX X Cords. . [____0-65535] (0xFFFF) |
+|                                                        |
+|Byte[7]. . Byte[6]                                      |
+|\7654 3210 \7654 3210                                   |
+|\XXXX XXXX \XXXX XXXX Y Cords. . [____0-65535] (0xFFFF) |
+|________________________________________________________|
+512x 32x32 sprites with 720p@16 RGBA Layers and OAM list, equals 56.76/64 MB [7.2446 MB Left]
+this is the most used senario, which i dout enyone would use that much data
 

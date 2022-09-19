@@ -1,0 +1,101 @@
+{} means optional
+[] means access lable
+
+* Assembler Only
+raw  - lets you put in raw bytes
+lmov A,B, IMM - does 2 mov instructions for 32-bit values
+{name}:                       - Defines a Label
+{name}:{                      - Defines a Labeled ByteArray
+%nochecksum                   - Starts without ROM Header (theres no real checksum yet)
+%title "8CharOnl"             - "y" | How rude, cutting off my Y like that [i might extend to 16 bytes]
+%include FileName,{Label}     - Adds a Assembly File (or Binary File to Label | hasn't been implemented)
+
+* Instuctions
+mov     A, B/IMM              - moves B/IMM, to A
+add     A, B/IMM, C           - adds A and B/IMM, to C
+inc     A                     - adds A, by 1
+sub     A, B/IMM, C           - subtracts A and B/IMM, to C
+dec     A                     - subtracts A, by 1
+mul     A, B/IMM, C           - multiplies A and B/IMM, to C
+div     A, B/IMM, C           - divides A and B/IMM, to C
+{b}and  A, B/IMM, C           - ands A and B/IMM, to C | both "band" or "and" works
+{b}or   A, B/IMM, C           - ors  A and B/IMM, to C | both "bor"  or "or"  works
+{b}xor  A, B/IMM, C           - xors A and B/IMM, to C | both "bxor" or "xor" works
+bsl     A, B/IMM, C           - bitshifts A to the left  by B/IMM, to C
+bsr     A, B/IMM, C           - bitshifts A to the right by B/IMM, to C
+{b}not  A                     - inverts A | both "bnot" or "not" works
+split   A,   B,C, {IMM}       - splits A into B and C | if IMM is 0: 8-bit split else 4-bit split
+combine A,B,   C, {IMM}       - combines A and B into C | IMM rules same as split
+jmp     [Label]/Address       - jumps to the given [Label] or Address
+led     {A,B,C}/{IMM}         - sets the System's LED color | IMM is #RRGGBB
+cmpeq   A, B                  - if A == B then continue, else skip 1 instruction
+cmplt   A, B                  - if A <  B then continue, else skip 1 instruction
+cmpgt   A, B                  - if A  > B then continue, else skip 1 instruction
+rpos    {A,B}/{IMM}           - Sets the RAM Position *Soon Will Be Depreciated, please use wmem in the future*
+wram    {B,C},   A            - Writes to RAM  *Will be replaced with wmem in the future*
+rram    {B,C},   A            - Reads from RAM *Will be replaced with wmem in the future*
+wvram   A, {Address}          - same as rram but VideoRAM *Soon Will Be Depreciated, please use wmem in the future*
+rvram   A, {Address}          - same as wram but VideoRAM *Soon Will Be Depreciated, please use wmem in the future*
+rsav    A, {Address}          - same as rram but SAV File *Soon Will Be Depreciated, please use wmem in the future*
+wsav    A, {Address}          - same as wram but SAV File *Soon Will Be Depreciated, please use wmem in the future*
+rrom    A, {Address}          - same as rram but ROM File *Soon Will Be Depreciated, please use wmem in the future*
+hlt     {IMM}                 - Halts or Restarts the System/Device
+disp    A, {B}, {C}           - Displays up to 3  (FOR DEBUG ONLY)
+flags   A                     - read the CPU's Flags into A
+dsend   ID,Operation, A       - Sends Device[ID] the Operation with A *Soon Will Be Depreciated, please use wmem in the future*
+drecv   ID,Operation, A       - Recvs Device[ID]'s value with Operation, to A
+icout   A, B                  - returns Instuction Pointer to A..B | example with 0x17F39: A would be 0x0001 and B would be 0x7F39
+exec    Location, Address     - executes code at Location aka MemoryDevice, and Location *Soon Will Be Depreciated, please use jmp in the future*
+rbios   Address, A            - same as rram *Soon Will Be Depreciated, please use wmem in the future*
+push    A                     - pushes A, into Stack
+pop     A                     - pops Stack, into A
+call    [Label]               - calls a Label as a Function [uses Stack]
+ret                           - returns from a Function [uses Stack]
+swap                          - swaps the first 2 Items in Stack
+gclk    A/Reset               - grabs the current runtime in seconds, to A (or Reset it)
+wait    A                     - waits for a certain [A]mount of seconds (FOR DEBUG ONLY)
+nop                           - what you expected me to do something? NOPe!
+
+
+** Future Stuff (as of 2022-06-04) **
+* Assembler Only
+{DEVICE}:Set{}/Get{} A | Quick Access to Device I/O for setting as A, or getting to A
+Devices: "gpu", "input" or "inp", "sound" or "snd", "network" or "net"
+
+* Instructions
+rem     A, B/IMM, C          - divides A and B/IMM, and returns remainder to C
+mod     A, B/IMM, C          - modulus B from A (aka A%B) to C
+rmem    A, {B,C}/Address     - Reads from MemoryMap *from Departed Xrram instructions*
+wmem    A, {B,C}/Address     - Writes to  MemoryMap *from Departed Xwram instructions*
+page    BANKSLOT, ROMBANK    - selects ROMBANK from CART into MemoryMap[BANKSLOT] | theres only 2 Bank Slots
+
+###################################################
+## Future TGR MEMORY MAP ##########################
+# ROM[0]  $0800000 [$0000000 - $07FFFFF]   8   MB #
+# ROM[1]  $0800000 [$0800000 - $0FFFFFF]   8   MB #
+# SAV     $0800000 [$1000000 - $17FFFFF]   8   MB #
+# WRAM    $7F7FE00 [$1800000 - $977FDFF] 127.9 MB #
+# STACK   $0040000 [$977FE00 - $97BFDFF] 256   KB #
+# STACK   $0040000 [$97BFE00 - $97FFDFF] 256   KB #
+# I/O     $0000200 [$97BFE00 - $97FFFFF] 512   BY #
+# VRAM    $4000000 [$9800000 - D7FFFFF$]  64   MB #
+## 216 MB [0xD800000] #############################
+###################################################
+#### ROM can be up to 16MB split into 2 Banks! ####
+## exROM can be up to 128MB split into 16 Banks! ##
+###################################################
+
+##################################################################################
+## CART Circuit Idea [ NOT FINAL ] ###############################################
+### 2 Chips for  2 BANKS ##### 4 Chips for  8 BANKS ##### 4 Chips for 16 BANKS ###
+#                          #  ______________________  #  ______________________  #
+#  ______________________  # | ==================== | # | ==================== | #
+# | ##================== | # | ## @@  @@ ## ## ## ##| # |## @@@ @@@ ## ## ## ##| #
+# | ## @@  @@  #### #### | # | ## @@  @@ ## ## ## ##| # |## @@@ @@@ ## ## ## ##| #
+# | ## @@  @@  #### #### | # | ## @@  @@ ## ## ## ##| # |## @@@ @@@ ## ## ## ##| #
+# |__8___________8____8__| # |__8________16_16_16_16| # |_8_________32_32_32_32| #
+# "||||||||||||||||||||||" # "||||||||||||||||||||||" # "||||||||||||||||||||||" #
+#          Minimal         #       Expanded Min.      #       Expanded Max.      #
+##################################################################################
+########### = Central Bussing | # ROM Units(MB) | @ MUX/Control Units ############
+##################################################################################
