@@ -3,23 +3,28 @@ from pygame import * #Required for User/Controller Inputs
 
 emulation = [
  ## Debug Mode ##
- False, # True/False
+ True, # True/False
 ]
 
 video = [
  ## Video Zoom ##
- 1, # 1x Minimum Default | 4x Maximum
+ 2, # 1x Minimum (Default) | 4x Maximum
 
  ### BELOW IS ONLY ENABLED WITH 2x+ ZOOM ###
-
- ## Pixelate ##
- False, # True/False
 
  ## ScanLines ##
  False, # True/False
 
- ## Fuzz Emulation ##
+ ## Pixelate ##
  False, # True/False
+
+ ## RGB-Fuzz Emulation ##
+ False, # True/False
+
+ ###########################################
+ 
+ ## Show Inputs ##
+ True, # True/False
 ]
 
 controllers = [[
@@ -27,6 +32,7 @@ controllers = [[
  ### CONTROLLER INPUT HASN'T BEEN IMPLIMENTED YET!!! ###
 
  ## PLAYER 1 ##
+ 0,   #Type [Default:0]
  K_z, #A
  K_x, #B
  K_c, #C
@@ -43,6 +49,7 @@ controllers = [[
  K_RIGHT, #Rright
 ],[
  ## PLAYER 2 ##
+ 0,     #Type [Default:0]
  K_KP1, #A
  K_KP5, #B
  K_KP3, #C
@@ -58,3 +65,357 @@ controllers = [[
  K_KP4, #Left
  K_KP6, #Rright
 ]]
+
+## END OF SETTINGS ##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Wait that wasn't the end??
+EasterEgg = False #WHAT IS THIS?!?! | True/False
+#Who put this this here??

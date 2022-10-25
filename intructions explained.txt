@@ -74,11 +74,10 @@ page    BANKSLOT, ROMBANK    - selects ROMBANK from CART into MemoryMap[BANKSLOT
 # ROM[0]  $0800000 [$0000000 - $07FFFFF]   8   MB #
 # ROM[1]  $0800000 [$0800000 - $0FFFFFF]   8   MB #
 # SAV     $0800000 [$1000000 - $17FFFFF]   8   MB #
-# WRAM    $7F7FE00 [$1800000 - $977FDFF] 127.9 MB #
-# STACK   $0040000 [$977FE00 - $97BFDFF] 256   KB #
+# WRAM    $7FBFE00 [$1800000 - $97BFDFF] 127.9 MB #
 # STACK   $0040000 [$97BFE00 - $97FFDFF] 256   KB #
 # I/O     $0000200 [$97BFE00 - $97FFFFF] 512   BY #
-# VRAM    $4000000 [$9800000 - D7FFFFF$]  64   MB #
+# VRAM    $4000000 [$9800000 - $D7FFFFF]  64   MB #
 ## 216 MB [0xD800000] #############################
 ###################################################
 #### ROM can be up to 16MB split into 2 Banks! ####
