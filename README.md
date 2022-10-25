@@ -12,8 +12,8 @@ Offical ROMs: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn'
 3rd Party ROMS: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn't setted up yet! [404]
 
 # Is the current build runnable? (will update)
-## For Build: v0.0.45a Alpha (goal: v0.0.7Xx Alpha)
- - Syntax Errors:   `Yes&No`   pygame works, don't recompile the C program yet, it's alittle broken still working on it...
+## For Build: v0.0.45b Alpha (goal: v0.0.7Xx Alpha)
+ - Syntax Errors:   `No`       pygame works, don't recompile the C program yet, it's alittle broken still working on it...
  - Runnable Build:  `Mostly`   [Functional, working on it...]
  - Stable CPU EMU:  `No`       (Not Finihsed Implementing Yet!!)
  - Stable Memory:   `Mostly`   (128 MB of RAM | 64 MB of VRAM)
