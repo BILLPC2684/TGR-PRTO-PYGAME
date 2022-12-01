@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#####################################################################################
+# THE GAME RAZER © 2022 BILLPC2684 ## https://github.com/BILLPC2684/TGR-PRTO-PYGAME #
+#   Main Interface(Client) File    ##################################################
+#####################################################################################
+####################################
 print("Loading TGR-PRTO v0.0.45b Alpha Build..."); Error = 0
 import os,sys,time,math,socket,traceback,logging;from textwrap import wrap;from threading import * #from multiprocessing import*;from multiprocessing import shared_memory
 try: import pygame
@@ -33,7 +38,7 @@ SIZ8MB,RAMSIZ,VRAMSIZ = 0x0800000,0x7FBFE00,0x4000000
 def hex2(x,l=2,j=False):x=hex(x)[2:][-l:];return("0x"*j)+("0"*(l-len(x)))+x.upper()
 def bin2(x,l=8,j=False):x=bin(x)[2:][-l:];return("0b"*j)+("0"*(l-len(x)))+x.upper()
 
-def send(args): global TGRsock; print(end=f"Client Send: {args}\n"*(not SendSilent)); input("---[paused after send]---"); return TGRsock.send(args+b";\x00")
+def send(args): global TGRsock; print(end=f"Client Send: {args}\n"*(not SendSilent)); return TGRsock.send(args+b";\x00") #input("---[paused after send]---");
 def log(msg,delay=300): global Messages; Messages.append([str(msg),delay]);print(end=str(msg))
 def ping(DELAY=0.1):
  time.sleep(DELAY)
@@ -176,7 +181,7 @@ tmp=[0,0,0,0,0,0,0,0,0,0]
 
 ################
 
-def ServiceProcess(): pass #os.system(f"{SystemPath}{OSsplit}bin{OSsplit}server.{OSexec} {PORT}")
+def ServiceProcess(): os.system(f"{SystemPath}{OSsplit}bin{OSsplit}server.{OSexec} {PORT}")
 def ReadMEM(Address,Length=1): send(f"rmem{hex2(Address,7)}{hex2(Length)}".encode())
 def WriteMEM(Address,Data,Length=1,Override=False): send(f"wmem{Address.to_bytes(4,'big')}{Length.to_bytes(1,'big')}{int(''.join([hex2(i)for i in Data]),16).to_bytes(Length,'big')}{Override.to_bytes(1,'big')}".encode())
 
@@ -203,9 +208,11 @@ def EXIT(silent=False): print(end="IT IS NOW SAFE TO TURN OFF YOUR SYSTEM!!\n"*E
 
 def main():
  global TGRsock,sockIP,PORT,SystemPath,OSsplit,OSexec,SW,SH,UInput,Exit,MenuTimer,screen,display,RAMUsage,VRAMUsage,Pause,Debug,Running,CPU_IP,CPU_IPS,CPU_TIPS,EasterEgg,Resolutions,SelectRez,TargetRez
- #while True:
- # try: tmpsock=socket.socket(); tmpsock.bind((sockIP,PORT)); tmpsock.close(); break
- # except OSError: PORT+=1
+ import Settings as config
+ if not config.service[0]: sockIP,PORT = config.service[1],config.service[2]
+ while config.service[0]:
+  try: tmpsock=socket.socket(); tmpsock.bind((sockIP,PORT)); tmpsock.close(); break
+  except OSError: PORT+=1
  print(end=f"\\Initialize Memory...\n");
  ##SEND ARRAY
  #Uinput,   Running+Pause+Debug+Exit, |
@@ -228,11 +235,10 @@ def main():
  ROMPATH,HUDinfo,ShowInput,Frames,FPS,IPS,TIPS,MX,MY,PMX,PMY,MB = "",True,False,0,0,[0,0],[0,0],0,0,0,0,0
  SecTimer,SecTimer2=time.time(),time.time()
  
- EMU_Service = Thread(target=ServiceProcess, args=()).start()
+ EMU_Service = (Thread(target=ServiceProcess, args=()).start() if config.service[0] else "")
  time.sleep(1); TGRsock.connect((sockIP,PORT)); ping();
  CPU_INIT(); init(); ping()
  
- import Settings as config
  CPU_DEBUG(config.emulation[0]); ping()
  if config.emulation[0]: print("Debug Mode: Enabled")
  else: print("Debug Mode: Disbaled")
@@ -268,35 +274,35 @@ def main():
  print(f"ROMPATH: {ROMPATH}")
  inDialog,DialogButton,DialogScroll,DialogSelect,DialogFile,DialogContents,Messages,EasterEgg=-1,0,0,0,"",[],[],config.EasterEgg #DialogType: -1:None | 0:LoadROM | 1:LoadState | 2:SaveState | 3:DumpMemory | 4:MemoryEditor
  if ROMPATH!="": Messages.append([f"ROM \"{ROMPATH}\" Loaded!",600]); Title_lock = False;
- Messages.append(["Notice: TheGameRazer is Back-In-Action!!\n\nCurrent Build: TGR-PRTO v0.0.45b Alpha\nAgain Please be patent with slow progress,\nReminder of whats new:\n----------------------------------------------------------\n\n* Using New Method for Emulation, Using Pygame as SystemIO\n\\while using C for all emulation work\n* Working on a File Manager for Accessing Files\n* Refining some internal errors in the design\n\n\nJust finished:\n* Finished File Manager\n\n----------------------------------------------------------\nTo-Do List:\n* Finish the C Service\n\\ * Add the CPU Instuctions\n\\ * Setup Sockets for Online Play/Networking\n\\ * Finishing Up Communication between UI and Service\n\n* and last of all, do BUG FIXES!! {SPOOKY...}\n\\... well more AAAAAH!! in the wrong way... pounding your\n \\head agenst the desk kind... WHAT FUN!!\n  \\(not)",100000]);
+ #Messages.append(["Notice: TheGameRazer is Back-In-Action!!\n\nCurrent Build: TGR-PRTO v0.0.45b Alpha\nAgain Please be patent with slow progress,\nReminder of whats new:\n----------------------------------------------------------\n\n* Using New Method for Emulation, Using Pygame as SystemIO\n\\while using C for all emulation work\n* Working on a File Manager for Accessing Files\n* Refining some internal errors in the design\n\n\nJust finished:\n* Finished File Manager\n\n----------------------------------------------------------\nTo-Do List:\n* Finish the C Service\n\\ * Add the CPU Instuctions\n\\ * Setup Sockets for Online Play/Networking\n\\ * Finishing Up Communication between UI and Service\n\n* and last of all, do BUG FIXES!! {SPOOKY...}\n\\... well more AAAAAH!! in the wrong way... pounding your\n \\head agenst the desk kind... WHAT FUN!!\n  \\(not)",100000]);
 # SystemPath = "/"
  Title_lock,TN,blitrt,zw,zh,ga,BitDepth=True,"",screen,0,0,0,32
  while True:
   HOSTdisplay = pygame.display.Info()
   try:
    if (~Running[0] and ~Running[1]): LED={0x00,0x00,0x00}
-   if (zoom == 0):
-    print(zoom,"|",zw,SW,"|",zh,SH)
-    if (zw != SW) | (zh != SH):
-#     pygame.display.set_mode((),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
-     screen = pygame.Surface((SW,SH)).convert();
-     #pygame.display.set_mode((SW+2, SH+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
-#     SDL_SetWindowSize(window, SW+2, SH+2);
-     zw,zh,ga=SW,SH,1;
-   elif (zoom >= 1) & (zoom <= 3):
-    print(zoom,"|",zw,SW*2,"|",zh,SH*2)
-    if (zw != SW*2) | (zh != SH*2):
-     screen = pygame.Surface((SW*2,SH*2)).convert();
-#     pygame.display.set_mode(((SW*2)+2, (SH*2)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
-#     SDL_SetWindowSize(window, (SW*2)+2, (SH*2)+2);
-     zw,zh,ga=SW*2,SH*2,2;
-   elif (zoom >= 4) & (zoom <= 7):
-    print(zoom,"|",zw,W*3,"|",zh,SH*3)
-    if (zw != SW*3) | (zh != SH*3):
-     screen = pygame.Surface((SW*3,SH*3)).convert();
-#     pygame.display.set_mode(((SW*3)+2, (SH*3)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
-#     SDL_SetWindowSize(window, (SW*3)+2, (SH*3)+2);
-     zw,zh,ga=SW*3,SH*3,3;
+#   if (zoom == 0):
+#    print(zoom,"|",zw,SW,"|",zh,SH)
+#    if (zw != SW) | (zh != SH):
+##     pygame.display.set_mode((),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
+#     screen = pygame.Surface((SW,SH)).convert();
+#     #pygame.display.set_mode((SW+2, SH+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
+##     SDL_SetWindowSize(window, SW+2, SH+2);
+#     zw,zh,ga=SW,SH,1;
+#   elif (zoom >= 1) & (zoom <= 3):
+#    print(zoom,"|",zw,SW*2,"|",zh,SH*2)
+#    if (zw != SW*2) | (zh != SH*2):
+#     screen = pygame.Surface((SW*2,SH*2)).convert();
+##     pygame.display.set_mode(((SW*2)+2, (SH*2)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
+##     SDL_SetWindowSize(window, (SW*2)+2, (SH*2)+2);
+#     zw,zh,ga=SW*2,SH*2,2;
+#   elif (zoom >= 4) & (zoom <= 7):
+#    print(zoom,"|",zw,W*3,"|",zh,SH*3)
+#    if (zw != SW*3) | (zh != SH*3):
+#     screen = pygame.Surface((SW*3,SH*3)).convert();
+##     pygame.display.set_mode(((SW*3)+2, (SH*3)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,BitDepth)
+##     SDL_SetWindowSize(window, (SW*3)+2, (SH*3)+2);
+#     zw,zh,ga=SW*3,SH*3,3;
    if ROMPATH!=DialogFile:
     readROM();
    if not Title_lock:
@@ -450,31 +456,31 @@ def main():
       else: DialogFile = DialogContents[DialogScroll+DialogSelect][0]; inDialog = -1; ROMPATH=DialogFile; Messages.append([f"File Selected: \"{DialogFile}\"",500])
     #
    #
-   
+   pygame.transform.scale(blitrt, (HOSTdisplay.current_w-2,HOSTdisplay.current_h-2))
    display.blit(blitrt, (2, 2))
    pygame.draw.rect(display, Boarder, (0,0,2,HOSTdisplay.current_h))
    pygame.draw.rect(display, Boarder, (0,0,HOSTdisplay.current_w,2))
    pygame.draw.rect(display, Boarder, (HOSTdisplay.current_w-2,0,SW,HOSTdisplay.current_h))
-   pygame.draw.rect(display, Boarder, (0,HOSTdisplay.current_h-2,SW,HOSTdisplay.current_h))
+   pygame.draw.rect(display, Boarder, (0,HOSTdisplay.current_w-2,SW,HOSTdisplay.current_h))
+
    if SecTimer+1 < time.time():TIPS=CPU_TIPS;FPS=Frames;Frames=0;SecTimer=time.time();IPS=CPU_IPS;CPU_IPS=[0,0]
 #   getChar("FPS: "+str(FPS), 10, SH-26, 128, 255, 128, 0xFF, True,1)
    #if (time.time()*1000)%((1/60)*1000):
    pygame.display.update();Frames+=1;MenuTimer-=(MenuTimer>0)*1;clk.tick(60)
    if inDialog == -1 and Exit==-1: send(b"tick"+b''.join([int("".join(str(i)for i in UInput[j]),2).to_bytes(2,"little") for j in range(2)])+((Running[0])+(Running[1]<<1)+(Pause<<2)+(Debug<<3)).to_bytes(1,"little"))
    else: send(b"tick\x00\x00\x00\x00"+ ((Running[0])+(Running[1]<<1)+(Pause<<2)+(Debug<<3)).to_bytes(1,"little"))
-   buffer = TGRsock.recv(1024)
+   try: buffer = TGRsock.recv(1024)
+   except socket.error: buffer=''
    if buffer!='':
     print(f"Client GOT: {buffer}")
-    if buffer.startswith("rezch"):
-     SelectRez = int(buffer[5]); display = pygame.display.set_mode(((Resolutions[SelectRez][0]*3)+2, (Resolutions[SelectRez][1]*3)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,Resolutions[SelectRez][2])
-     SW,SH=Resolutions[SelectRez][0],Resolutions[SelectRez][1]
-    if buffer.startswith("quit"): print("EXIT"); raise KeyboardInterrupt
+    if buffer.startswith(b"rezch"): SelectRez = int(buffer[5]); SW,SH=Resolutions[SelectRez][0],Resolutions[SelectRez][1]; screen = pygame.Surface((SW,SH)).convert()
+    if buffer.startswith(b"quit"): print("EXIT"); raise KeyboardInterrupt
  #Uinput,   Running+Pause+Debug, |
  #4,        1 byte (4-bits),     |
  #0,1,      2                    |
 
   except BrokenPipeError: print("ERROR: Lost Connection to Service!!"); break
-  except socket.error: print(end="\n[EMU] We have detected the main loop has stopped responding...\n\nThis halt is most likely due to a Emulation Error.\nIf there is a Error, check above for what the problem is. [If it's the ROM make sure Debug Mode is Active]\n/!\\Reminder: check the ROM before reporting EMU probblems/!\\\n"); break
+  except socket.error as err: print(end=f"\nerr:{err}\n[EMU] We have detected the main loop has stopped responding...\n\nThis halt is most likely due to a Emulation Error.\nIf there is a Error, check above for what the problem is. [If it's the ROM make sure Debug Mode is Active]\n/!\\Reminder: check the ROM before reporting EMU probblems/!\\\n"); break
  send(f"quit".encode());
 ##################################################
 

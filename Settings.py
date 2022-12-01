@@ -3,28 +3,28 @@ from pygame import * #Required for User/Controller Inputs
 
 emulation = [
  ## Debug Mode ##
- True, # True/False
+ False, # True/False
 ]
 
 video = [
  ## Video Zoom ##
- 2, # 1x Minimum (Default) | 4x Maximum
+ 1, # 1-4 | Default: 1
 
  ### BELOW IS ONLY ENABLED WITH 2x+ ZOOM ###
 
  ## ScanLines ##
- False, # True/False
+ False, # True/False | Default: False
 
  ## Pixelate ##
- False, # True/False
+ False, # True/False | Default: False
 
  ## RGB-Fuzz Emulation ##
- False, # True/False
+ False, # True/False | Default: False
 
  ###########################################
  
  ## Show Inputs ##
- True, # True/False
+ True, # True/False | Default: False
 ]
 
 controllers = [[
@@ -66,17 +66,17 @@ controllers = [[
  K_KP6, #Rright
 ]]
 
+service = [
+ ## Enable AutoConnecting to Service ##
+ False, # True/False | Default: True
+ 
+ ## ManualConnect Address ##
+ "", #Default: "" or "localhost"
+ ## ManualConnect Port ##
+ 1213, # 1-65535 | Default: 1213
+]
+
 ## END OF SETTINGS ##
-
-
-
-
-
-
-
-
-
-
 
 
 

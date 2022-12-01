@@ -11,7 +11,7 @@ lmov A,B, IMM - does 2 mov instructions for 32-bit values
 %include FileName,{Label}     - Adds a Assembly File (or Binary File to Label | hasn't been implemented)
 
 * Instuctions
-mov     A, B/IMM              - moves B/IMM, to A
+mov     A, B*/IMM, Flag        - moves B*/IMM, to A [* means Flag Enabled]
 add     A, B/IMM, C           - adds A and B/IMM, to C
 inc     A                     - adds A, by 1
 sub     A, B/IMM, C           - subtracts A and B/IMM, to C
@@ -76,7 +76,7 @@ page    BANKSLOT, ROMBANK    - selects ROMBANK from CART into MemoryMap[BANKSLOT
 # SAV     $0800000 [$1000000 - $17FFFFF]   8   MB #
 # WRAM    $7FBFE00 [$1800000 - $97BFDFF] 127.9 MB #
 # STACK   $0040000 [$97BFE00 - $97FFDFF] 256   KB #
-# I/O     $0000200 [$97BFE00 - $97FFFFF] 512   BY #
+# I/O     $0000200 [$97FFE00 - $97FFFFF] 512   BY #
 # VRAM    $4000000 [$9800000 - $D7FFFFF]  64   MB #
 ## 216 MB [0xD800000] #############################
 ###################################################
