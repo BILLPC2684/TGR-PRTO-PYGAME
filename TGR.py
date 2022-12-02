@@ -4,7 +4,7 @@
 #   Main Interface(Client) File    ##################################################
 #####################################################################################
 ####################################
-print("Loading TGR-PRTO v0.0.45b Alpha Build..."); Error = 0
+print("Loading TGR-PRTO v0.0.46a Alpha Build..."); Error = 0
 import os,sys,time,math,socket,traceback,logging;from textwrap import wrap;from threading import * #from multiprocessing import*;from multiprocessing import shared_memory
 try: import pygame
 except: os.system("pip3 install pygame"); Error+=1
@@ -16,7 +16,7 @@ clk = pygame.time.Clock()
 skip_search,PORT,OSsplit,OSexec,PWD = False,1213,"","",os.path.dirname(os.path.realpath(__file__))
 buffer,running,TGRsock,sockIP = bytearray(1024*9),True,socket.socket(socket.AF_INET, socket.SOCK_STREAM),"127.0.0.1"
 if not TGRsock: print(end=f"\n Socket creation error [THIS SHOULD NOT BE POSSIBLE!!!]\n"); os.exit(-1);
-TGRsock.settimeout(1)
+TGRsock.settimeout(0.0001)
 
 if os.name=="nt": OSsplit,OSexec="\\","exe"
 else: OSsplit,OSexec="/","o"
@@ -47,7 +47,7 @@ def ping(DELAY=0.1):
   try:
    if TGRsock.recv(1024) == b"pong": break
   except socket.timeout: pass
-
+  except BrokenPipeError: print("ERROR: Lost Connection to Service!!"); return -1
 ## FONT DATA ##
 def backChar(Length,X,Y,R,G,B):
  for y in range(8):
@@ -207,25 +207,26 @@ def CPU_STOP(ID): global Running;Running[ID]=False; send(b"stop"+(ID*1).to_bytes
 def EXIT(silent=False): print(end="IT IS NOW SAFE TO TURN OFF YOUR SYSTEM!!\n"*EasterEgg); (send(f"quit".encode()) if not silent else print(end=''))
 
 def main():
- global TGRsock,sockIP,PORT,SystemPath,OSsplit,OSexec,SW,SH,UInput,Exit,MenuTimer,screen,display,RAMUsage,VRAMUsage,Pause,Debug,Running,CPU_IP,CPU_IPS,CPU_TIPS,EasterEgg,Resolutions,SelectRez,TargetRez
+ global TGRsock,sockIP,PORT,SystemPath,OSsplit,OSexec,SW,SH,UInput,Exit,MenuTimer,screen,display,RAMUsage,VRAMUsage,Pause,Debug,Running,CPU_IP,CPU_IPS,CPU_TIPS,EasterEgg,Resolutions,SelectRez,TargetRez,buffer
  import Settings as config
  if not config.service[0]: sockIP,PORT = config.service[1],config.service[2]
  while config.service[0]:
   try: tmpsock=socket.socket(); tmpsock.bind((sockIP,PORT)); tmpsock.close(); break
   except OSError: PORT+=1
  print(end=f"\\Initialize Memory...\n");
+ ## TICK ############################################################################
  ##SEND ARRAY
  #Uinput,   Running+Pause+Debug+Exit, |
  #4,        1 byte (5-bits),          |
  #0,1,2,3,  4                         |
- ##RECV ARRAY
- #IP,  Flags, Running+Pause+Debug+Exit, Error, MEMORY MAP, Display[720p], |
- #8,   1,     1 byte (5-bits),          1024,  0xD800000,  0x2A3000,      |
+ ##RECV ARRAY 
+ #IP,  Flags, Running+Pause+Debug+Exit, Error, MEMORY MAP, Display[720p], N/A|
+ #8,   1,     1 byte (5-bits),          1024,  0xD800000,  0x2A3000,      N/A|
  #0,3, 7,     8,                        9,     0x409       0xD800409,     0xDAA3409|
  #MEM = bytearray(0xD800000) #Full MemoryMap: 216 MiB
- ROMPG = [bytearray(SIZ8MB)*33]
- print(end=f" \\0x{hex2(RAMSIZ,7)}\\{RAMSIZ}\tBytes({RAMSIZ/1024/1024} MB)\tof RAM were allocated...\n");
- print(end=f" \\0x{hex2(VRAMSIZ,7)}\\{VRAMSIZ}\tBytes({VRAMSIZ/1024/1024} MB)\tof VideoRAM was allocated...\n",);
+ ROMPG = [] #bytearray(SIZ8MB)*33]
+ print(end=f" \\0x{hex2(RAMSIZ,7)}\\{RAMSIZ}\tBytes({round(RAMSIZ/1024/1024*100)/100} MB)\tof RAM were allocated...\n");
+ print(end=f" \\0x{hex2(VRAMSIZ,7)}\\ {VRAMSIZ}\tBytes( {VRAMSIZ/1024/1024}0 MB)\tof VideoRAM was allocated...\n",);
  pygame.init(); pygame.display.set_icon(pygame.image.load(f"bin{OSsplit}TGR_logo.png"))
  pygame.display.set_caption('TheGameRazer - [NO-ROM]'); print(end=".")
  display = pygame.display.set_mode((Resolutions[SelectRez][0]+2, (Resolutions[SelectRez][1]*3)+2),pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE,Resolutions[0][2]); print(end=".")
@@ -235,14 +236,15 @@ def main():
  ROMPATH,HUDinfo,ShowInput,Frames,FPS,IPS,TIPS,MX,MY,PMX,PMY,MB = "",True,False,0,0,[0,0],[0,0],0,0,0,0,0
  SecTimer,SecTimer2=time.time(),time.time()
  
- EMU_Service = (Thread(target=ServiceProcess, args=()).start() if config.service[0] else "")
+ (Thread(target=ServiceProcess, args=()).start() if config.service[0] else "")
+ socket_threadrt = Thread(target=socket_thread, args=()); socket_threadrt.start()
  time.sleep(1); TGRsock.connect((sockIP,PORT)); ping();
  CPU_INIT(); init(); ping()
  
  CPU_DEBUG(config.emulation[0]); ping()
  if config.emulation[0]: print("Debug Mode: Enabled")
  else: print("Debug Mode: Disbaled")
- CPU_RUN(0); ping(); zoom,ShowInput=(0 if(config.video[0]==1)else(1+((config.video[2]*2)or(config.video[1]*1))if(config.video[0]==2)else(4+((config.video[2]*2)or(config.video[1]*1))if(config.video[0]==3)else print("Error: Zoom Setting is too high!!")==None))),config.video[4]
+ CPU_RUN(0); ping(); zoom,ShowInput=(0 if(config.video[0]==1)else(1+((config.video[2]*2)or(config.video[1]*1))if(config.video[0]==2)else(4+((config.video[2]*2)or(config.video[1]*1))if(config.video[0]==3)else error("Error: Zoom Setting is too high!!")==None))),config.video[6]
  fuzz = config.video[3]
  for i in range(len(sys.argv)):
   if (sys.argv[i]=="--slow"         or sys.argv[i]=="-s"   ): i+=1; slowdown = sys.argv[i]
@@ -456,8 +458,7 @@ def main():
       else: DialogFile = DialogContents[DialogScroll+DialogSelect][0]; inDialog = -1; ROMPATH=DialogFile; Messages.append([f"File Selected: \"{DialogFile}\"",500])
     #
    #
-   pygame.transform.scale(blitrt, (HOSTdisplay.current_w-2,HOSTdisplay.current_h-2))
-   display.blit(blitrt, (2, 2))
+   display.blit(pygame.transform.scale(blitrt, (HOSTdisplay.current_w-2,HOSTdisplay.current_h-2)), (2, 2))
    pygame.draw.rect(display, Boarder, (0,0,2,HOSTdisplay.current_h))
    pygame.draw.rect(display, Boarder, (0,0,HOSTdisplay.current_w,2))
    pygame.draw.rect(display, Boarder, (HOSTdisplay.current_w-2,0,SW,HOSTdisplay.current_h))
@@ -469,19 +470,29 @@ def main():
    pygame.display.update();Frames+=1;MenuTimer-=(MenuTimer>0)*1;clk.tick(60)
    if inDialog == -1 and Exit==-1: send(b"tick"+b''.join([int("".join(str(i)for i in UInput[j]),2).to_bytes(2,"little") for j in range(2)])+((Running[0])+(Running[1]<<1)+(Pause<<2)+(Debug<<3)).to_bytes(1,"little"))
    else: send(b"tick\x00\x00\x00\x00"+ ((Running[0])+(Running[1]<<1)+(Pause<<2)+(Debug<<3)).to_bytes(1,"little"))
-   try: buffer = TGRsock.recv(1024)
-   except socket.error: buffer=''
+ ## TICK #########################
+ #Uinput,   Running+Pause+Debug, |
+ #4,        1 byte (4-bits),     |
+ #0,1,      2                    |
+   if not socket_threadrt.is_alive(): raise socket.error
+  except BrokenPipeError: print("ERROR: Lost Connection to Service!!"); break
+  except socket.error as err: print(end=f"\nerr:{err}\n[EMU] We have detected the main loop has stopped responding...\n\nThis halt is most likely due to a Emulation Error.\nIf there is a Error, check above for what the problem is. [If it's the ROM make sure Debug Mode is Active]\n/!\\Reminder: check the ROM before reporting EMU probblems/!\\\n"); break
+ send(f"quit".encode());
+  
+###
+def socket_thread():
+ global TGRsock,sockIP,PORT,SystemPath,OSsplit,OSexec,SW,SH,UInput,Exit,MenuTimer,screen,display,RAMUsage,VRAMUsage,Pause,Debug,Running,CPU_IP,CPU_IPS,CPU_TIPS,EasterEgg,Resolutions,SelectRez,TargetRez,buffer
+ while True:
+  try:
+   try: buffer = TGRsock.recv(1024) #; print("GOT DATA: {buffer}")
+   except socket.error: buffer=''; #print("Socket Error, no data in request (timeout responce)")
    if buffer!='':
     print(f"Client GOT: {buffer}")
     if buffer.startswith(b"rezch"): SelectRez = int(buffer[5]); SW,SH=Resolutions[SelectRez][0],Resolutions[SelectRez][1]; screen = pygame.Surface((SW,SH)).convert()
     if buffer.startswith(b"quit"): print("EXIT"); raise KeyboardInterrupt
- #Uinput,   Running+Pause+Debug, |
- #4,        1 byte (4-bits),     |
- #0,1,      2                    |
-
   except BrokenPipeError: print("ERROR: Lost Connection to Service!!"); break
-  except socket.error as err: print(end=f"\nerr:{err}\n[EMU] We have detected the main loop has stopped responding...\n\nThis halt is most likely due to a Emulation Error.\nIf there is a Error, check above for what the problem is. [If it's the ROM make sure Debug Mode is Active]\n/!\\Reminder: check the ROM before reporting EMU probblems/!\\\n"); break
- send(f"quit".encode());
+  except socket.error as err:  break
+ return -1
 ##################################################
 
 #CPU_DEBUG

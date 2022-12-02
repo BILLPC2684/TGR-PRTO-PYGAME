@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include <pthread.h>
 #include <math.h>
@@ -20,9 +21,9 @@
 
 typedef struct {
  bool     PrintDebugs;
- bool     *Pause,Running[2],Debug;
- uint8_t  *MEM,*ROMPG[33],Page[2],LED[3],id;
- uint32_t IP[2],SP[2],SPMIN[2],SPMAX[2];
+ bool     Pause,Running[2],Debug;
+ uint8_t  *MEM,*ROMPG[33],Page[2],LED[3],id,DisplaySize,Display[720][1280],Flags,tmp[4];
+ uint32_t client,IP[2],SP[2],SPMIN[2],SPMAX[2];
  uint64_t time,IPS,TIPS,IPC,frames,FPS;
  uint16_t REG[2][8]; //A,B,C,D,E,F,G,H
  float  RunQuality;
@@ -41,6 +42,33 @@ void *CPU_CLOCK(void *null);
 char *ascii     = "................................ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~.................................¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
 char *ascii_non = "................................ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~.......................................................................................................................................................";
 
+void status(const char*format,...){ //not made by me
+    va_list v;
+    va_start(v,format);
+    int length=vsnprintf(0,0,format,v);
+    va_end(v);
+    if(length<0||length>=SIZE_MAX){
+        return;
+    }
+    char*string=malloc((size_t)length+1);
+    if(!string){
+        return;
+    }
+    va_start(v,format);
+    vsnprintf(string,length,format,v);
+    va_end(v);
+    send(sys.client,string,length,0); // assuming this is correct and by sizeof(string) you meant the length of the string
+    fputs(string,stdout);
+    free(string);// or return the string if you want
+}
+
+/*char* status(const char *format, ...) {
+ char*string = "";
+ sprintf(string, format, ...);
+ send(sys.client, string, sizeof(string), 0;
+ printf(string); return string;
+}*/
+ 
 char* concat(const char *s1, const char *s2) {
  const size_t len[2] = {strlen(s1), strlen(s2)};
  char *result = malloc(len[0]+len[1]+1);//+1 for the null-terminator
@@ -112,16 +140,16 @@ void crop(char *dst, char *src, size_t mn, size_t mx) {
 void updateROM() { int j,i; for(j=0;j<2;j++) { for(i=0;i<0x0800000;i++) { /*printf("sys.ROMPG[%d:%7x][%7x]\n",j,i,i+(0x0800000*j));*/ sys.MEM[i+(0x0800000*j)] = sys.ROMPG[sys.Page[j]][i]; } } }
 
 int main(int argc, char const* argv[]) {
- sys.PrintDebugs = true;
+ sys.PrintDebugs=true,sys.DisplaySize=0;
  if (argc < 2) { printf("EMU Error: No Emulation Service Port Was Given!\nUsage: ./server.o <PORT>\n"); return -1; }
  printf("EMU Service: Initalizing Emulation...\n"); struct sockaddr_in address; char buffer[1024*9] = {0};
- int TGRsock, client, valread, opt = 1, addrlen = sizeof(address);
+ int TGRsock, valread, opt = 1, addrlen = sizeof(address);
  if ((TGRsock = socket(AF_INET, SOCK_STREAM, 0)) == 0) { perror("socket failed"); exit(EXIT_FAILURE); }
  if (setsockopt(TGRsock, SOL_SOCKET, SO_REUSEADDR|SO_REUSEPORT, &opt, sizeof(opt))) { perror("setsockopt"); exit(EXIT_FAILURE); }
  address.sin_family = AF_INET; address.sin_addr.s_addr = INADDR_ANY; address.sin_port = htons((int)strtol(argv[1],(char**)NULL,10));
  if (bind(TGRsock, (struct sockaddr*)&address, sizeof(address)) < 0) { perror("EMU Service: bind failed"); exit(EXIT_FAILURE); }
  if (listen(TGRsock, 3) < 0) { perror("listen"); exit(EXIT_FAILURE); } printf("EMU Service: Initalized, waiting for Emulation Client\n");
- if ((client = accept(TGRsock, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) { perror("accept"); exit(EXIT_FAILURE); }
+ if ((sys.client = accept(TGRsock, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) { perror("accept"); exit(EXIT_FAILURE); }
  printf("EMU Service: Connected! Starting main loop...\n\n");
 
  dumpData("File", "test", 4, true, 0, 4);
@@ -166,22 +194,21 @@ int main(int argc, char const* argv[]) {
  updateROM();
  */
  struct pollfd sockfd;
- uint8_t ret;
- uint16_t timeouts=0;
+ uint8_t ret,timeout=0;
  
  sockfd.fd = TGRsock; // your socket handler
  sockfd.events = POLLIN;
  while(1) {
   memset(buffer, 0, sizeof(buffer));
-  ret = poll(&client, 1, 5); // 1ms for timeout
+  ret = poll(&sys.client, 1, 1); // 1ms for timeout
 //  if(ret!=0){printf(">>>> ret: %i\n",ret);}
   switch (ret) {
-    case -1: printf("SOCKET ERROR"); printf("EMU Service: A Communication Error Has Occored With The Client!\n"); close(client); shutdown(TGRsock, SHUT_RDWR); return -1; // Error
-    case 0: valread=0,timeouts++; break; // Timeout
-    default:  valread = read(client,buffer,sizeof(buffer)),timeouts=0;
+    case -1: printf("SOCKET ERROR"); printf("EMU Service: A Communication Error Has Occored With The Client!\n"); close(sys.client); shutdown(TGRsock, SHUT_RDWR); return -1; // Error
+    case 0: valread=0,timeout=0; break; // Timeout
+    default:  valread = read(sys.client,buffer,sizeof(buffer)),timeout++;
   }  memcpy(command,&buffer,10);
-  printf("ret: %d | timeouts: %d\n",ret,timeouts);
-  if (timeouts == 0xFFFF) { printf("EMU Service: CRITIAL ERROR CLIENT HAS TIMED OUT!!! (Client Has Not Responded In %d Attempts!)\n",0xFFFF); close(client); shutdown(TGRsock, SHUT_RDWR); return -1; }
+//  printf("ret: %d | timeout: %d\n",ret,timeout);
+  if (timeout == 0xFF) { printf("EMU Service: CRITIAL ERROR CLIENT HAS TIMED OUT!!! (Client Has Not Responded In %d Attempts!)\n",0xFF); close(sys.client); shutdown(TGRsock, SHUT_RDWR); return -1; }
   if (valread > 0) {
    if (sys.PrintDebugs) { printf("EMU Service: \""); for(i=0;i<sizeof(buffer);i++) { printf("%c", buffer[i]); } printf("\" | \"%s\"\n",buffer); }
    //for(int i=0;i<sizeof(buffer);i++) { printf("%c", (buffer[i]<32)?'.':buffer[i]); } printf("\n%s\n",buffer);
@@ -191,17 +218,30 @@ int main(int argc, char const* argv[]) {
     sys.IP[0]=0;sys.IP[1]=0;sys.SP[0]=0x97FFDFF;sys.SP[1]=0x97DFDFF;sys.IPS=0;for(j=0;j<2;j++){for(i=0;i<8;i++){sys.REG[j][i]=0;}};updateROM();
    } else if (strstr(command, "pause" )!=NULL) {
     printf("EMU Service: Emulation sys.Paused!!\n");
-   } else if (strstr(command, "ping"  )!=NULL) { printf("ping"); send(client, "pong", 4, 0);
+   } else if (strstr(command, "ping"  )!=NULL) { printf("ping"); send(sys.client, "pong", 4, 0);
    } else if (strstr(command, "debug" )!=NULL) { sys.Debug=buffer[5]; printf("EMU Service: sys.Debug mode %s\n",(sys.Debug==1)?"activated":"deactivated");
    } else if (strstr(command, "uplrom")!=NULL) { printf("EMU Service: Downloading ROMBank[%i]...\n", buffer[6]); for(i=7;i<0x0800007;i++){sys.ROMPG[buffer[6]][i-7]=buffer[i];}
    } else if (strstr(command, "run"   )!=NULL) { sys.Running[buffer[3]]=true; printf("EMU Service: Running CPU Core #%d\n", buffer[3]);
    } else if (strstr(command, "stop"  )!=NULL) { sys.Running[buffer[4]]=false;printf("EMU Service: Stopping CPU Core #%d\n",buffer[4]);
-   } else if (strstr(command, "quit"  )!=NULL) { send(client, "quit", 4, 0); break;
-   } else if (strstr(command, "tick"  )!=NULL) { printf("tock"); send(client, sprintf(dummystr,"tock%c%c",sys.Running[0]?1:0,sys.Running[1]?1:0), 6, 0); }
-   //send(client, buffer, strlen(buffer), 0); //Echoing
-//  for(sys.id=0;sys.id<2;sys.id++) {
+   } else if (strstr(command, "quit"  )!=NULL) { send(sys.client, "quit", 4, 0); break;
+   } else if (strstr(command, "tick"  )!=NULL) {
+    send(sys.client, sprintf(dummystr,"tock%c%c%c%c%c%c%c%c%c%c %s",
+     sys.IP[0]>>32,sys.IP[0]>>16,sys.IP[0]>>8,sys.IP[0]&0xFF, sys.IP[1]>>32,sys.IP[1]>>16,sys.IP[1]>>8,sys.IP[1]&0xFF,
+     sys.Flags,
+     sys.Running[0]<<1|sys.Running[0]<<1|sys.Pause<<1|sys.Debug<<1,
+     sys.MEM,
+     sys.DisplaySize,
+     sys.Display
+    ), 6, 0); }
+    //## TICK ###################################################################
+    //##RECV ARRAY
+    //#IP,  Flags, Running+Pause+Debug+N/A, MEMORY MAP, Display[720p], N/A      |
+    //#8,   1,     1 byte (5-bits),         0xD800000,  0x2A3000,      N/A      |
+    //#0,3, 7,     8,                       9           0xD800009,     0xDAA3009|
+    //###########################################################################
+//   send(sys.client, buffer, strlen(buffer), 0); //Echoing
   }
- } printf("ret:%d\nEMU Service: Shutting down...",ret); close(client); shutdown(TGRsock, SHUT_RDWR); return 0;
+ } printf("ret:%d\nEMU Service: Shutting down...\n",ret); close(sys.client); shutdown(TGRsock, SHUT_RDWR); return 0;
 }
 
 //##SERVER VERSION
@@ -290,60 +330,65 @@ void *CPU_EXEC(int coreid) {
      if (C >= 1) { sys.REG[coreid][A] = sys.REG[coreid][B]; }else{ sys.REG[coreid][A] = IMM; } break;
     case 0x01: //add     A, B/IMM, C           - adds A and B/IMM, to C
      if (sys.Debug == true) { printf("ADD\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]+IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]+sys.REG[coreid][C]; } break;
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]+IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]+sys.REG[coreid][B]; } break;
     case 0x02: //sub     A, B/IMM, C           - subtracts A and B/IMM, to C
      if (sys.Debug == true) { printf("SUB\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]-IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]-sys.REG[coreid][C]; } break;
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]-IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]-sys.REG[coreid][B]; } break;
     case 0x03: //mul     A, B/IMM, C           - multiplies A and B/IMM, to C
      if (sys.Debug == true) { printf("MUL\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]*IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]*sys.REG[coreid][C]; } break;
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]*IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]*sys.REG[coreid][B]; } break;
     case 0x04: //div     A, B/IMM, C           - divides A and B/IMM, to C
      if (sys.Debug == true) { printf("DIV\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]/IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]/sys.REG[coreid][C]; } break;
-    case 0x05: //{b}and  A, B/IMM, C           - ands A and B/IMM, to C | both "band" or "and" works
+     if (IMM >= 1 && sys.REG[coreid][A]&IMM==0) {sys.REG[coreid][C] = 0; break;}else if (sys.REG[coreid][A]&sys.REG[coreid][B]==0) {sys.REG[coreid][C] = 0; break;}
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]/IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]/sys.REG[coreid][B]; } break;
+    case 0x05: //mod     A, B/IMM, C           - modulos A and B/IMM, to C
+     if (sys.Debug == true) { printf("MOD\n"); }
+     if (IMM >= 1 && sys.REG[coreid][A]&IMM==0) {sys.REG[coreid][C] = 0; break;}else if (sys.REG[coreid][A]&sys.REG[coreid][B]==0) {sys.REG[coreid][C] = 0; break;}
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]%IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]%sys.REG[coreid][B]; } break;
+    case 0x06: //{b}and  A, B/IMM, C           - ands A and B/IMM, to C | both "band" or "and" works
      if (sys.Debug == true) { printf("AND\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]&IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]&sys.REG[coreid][C]; } break;
-    case 0x06: //{b}or   A, B/IMM, C           - ors  A and B/IMM, to C | both "bor"  or "or"  works
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]&IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]&sys.REG[coreid][B]; } break;
+    case 0x07: //{b}or   A, B/IMM, C           - ors  A and B/IMM, to C | both "bor"  or "or"  works
      if (sys.Debug == true) { printf("OR\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]|IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]|sys.REG[coreid][C]; } break;
-    case 0x07: //{b}xor  A, B/IMM, C           - xors A and B/IMM, to C | both "bxor" or "xor" works
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]|IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]|sys.REG[coreid][B]; } break;
+    case 0x08: //{b}xor  A, B/IMM, C           - xors A and B/IMM, to C | both "bxor" or "xor" works
      if (sys.Debug == true) { printf("XOR\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]^IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]^sys.REG[coreid][C]; } break;
-    case 0x08: //bsl     A, B/IMM, C           - bitshifts A to the left  by B/IMM, to C
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]^IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]^sys.REG[coreid][B]; } break;
+    case 0x09: //bsl     A, B/IMM, C           - bitshifts A to the left  by B/IMM, to C
      if (sys.Debug == true) { printf("BSL\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]<<IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]<<sys.REG[coreid][C]; } break;
-    case 0x09: //bsr     A, B/IMM, C           - bitshifts A to the right by B/IMM, to C
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]<<IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]<<sys.REG[coreid][B]; } break;
+    case 0x0A: //bsr     A, B/IMM, C           - bitshifts A to the right by B/IMM, to C
      if (sys.Debug == true) { printf("BSR\n"); }
-     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]>>IMM; }else{ sys.REG[coreid][A] = sys.REG[coreid][B]>>sys.REG[coreid][C]; } break;
-    case 0x0A: //{b}not  A                     - inverts A | both "bnot" or "not" works
+     if (IMM >= 1) { sys.REG[coreid][C] = sys.REG[coreid][A]>>IMM; }else{ sys.REG[coreid][C] = sys.REG[coreid][A]>>sys.REG[coreid][B]; } break;
+    case 0x0B: //{b}not  A                     - inverts A | both "bnot" or "not" works
      if (sys.Debug == true) { printf("NOT\n"); }
      sys.REG[coreid][A] = ~sys.REG[coreid][A]; break;
-    case 0x0B: //split   A,   B,C, {IMM}       - splits A into B and C | if IMM is 0: 8-bit split else 4-bit split
-     if (sys.Debug == true) { printf("SPLIT\n"); }
-     if ((IMM % 0x2) == 0) { sys.REG[coreid][B] = sys.REG[coreid][A] & 0xFF; sys.REG[coreid][C] = sys.REG[coreid][A] >> 8; } else { sys.REG[coreid][B] = sys.REG[coreid][A] & 0xF; sys.REG[coreid][C] = sys.REG[coreid][A] >> 4; } break;
-    case 0x0C: //combine A,B,   C, {IMM}       - combines A and B into C | IMM rules same as split
-     if (sys.Debug == true) { printf("COMBINE\n"); }
-     if ((IMM % 0x2) == 0) { sys.REG[coreid][C] = (sys.REG[coreid][A] << 8) | (sys.REG[coreid][B] & 0xFF); }else{ sys.REG[coreid][C] = (sys.REG[coreid][A] << 4) | (sys.REG[coreid][B] & 0xF); } break;
+    case 0x0C: //flags   A                     - read the CPU's Flags into A
+     if (sys.Debug == true) { printf("FLAG\n"); }
+      sys.REG[coreid][A] = sys.Flags; break;
     case 0x0D: //jmp     [Label]/Address       - jumps to the given [Label] or Address
      if (sys.Debug == true) { printf("JUMP\n"); }
      if (sys.REG[coreid][C] >= 1) { sys.IP[coreid] = sys.REG[coreid][A]<<16|sys.REG[coreid][B]; }else{ sys.IP[coreid] = IMM; } break;
-    case 0x0E: //led     {A,B,C}/{IMM}         - sets the System's LED color | IMM is #RRGGBB
-     if (sys.Debug == true) { printf("LED\n"); }
-     if (IMM > 0) { sys.LED[0],sys.LED[1],sys.LED[2]=IMM>>16,IMM>>8&0xFF,IMM&0xFF; }else{ sys.LED[0],sys.LED[1],sys.LED[2]=sys.REG[coreid][A],sys.REG[coreid][B],sys.REG[coreid][C]; } break;
-    case 0x0F: //cmpeq   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
+    case 0x0E: //cmpeq   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
      if (sys.Debug == true) { printf("CMP=\n"); }
      if (C > 0xF) {  if (sys.REG[coreid][A] == IMM) { sys.IP[coreid] += 6 || sys.REG[coreid][C&0xF]*6; }
      }else if(sys.REG[coreid][A] == sys.REG[coreid][B]) { sys.IP[coreid] += 6 || sys.REG[coreid][C]*6; } break;
-    case 0x10: //cmplt   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
+    case 0x0F: //cmplt   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
      if (sys.Debug == true) { printf("CMP<\n"); }
      if (C > 0xF) {  if (sys.REG[coreid][A] <  IMM) { sys.IP[coreid] += 6 || sys.REG[coreid][C&0xF]*6; }
      }else if(sys.REG[coreid][A] <  sys.REG[coreid][B]) { sys.IP[coreid] += 6 || sys.REG[coreid][C]*6; } break;
-    case 0x11: //cmpgt   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
+    case 0x10: //cmpgt   A, B,{C},{IMM}        - if A == B or {IMM} then continue, else skip 1 or {C} instructions
      if (sys.Debug == true) { printf("CMP>\n"); }
      if (C > 0xF) {  if (sys.REG[coreid][A] >  IMM) { sys.IP[coreid] += 6 || sys.REG[coreid][C&0xF]*6; }
      }else if(sys.REG[coreid][A] >  sys.REG[coreid][B]) { sys.IP[coreid] += 6 || sys.REG[coreid][C]*6; } break;
+    case 0x11: //split   A,   B,C, {IMM}       - splits A into B and C | if IMM is 0: 8-bit split else 4-bit split
+     if (sys.Debug == true) { printf("SPLIT\n"); }
+     if ((IMM % 0x2) == 0) { sys.REG[coreid][B] = sys.REG[coreid][A] & 0xFF; sys.REG[coreid][C] = sys.REG[coreid][A] >> 8; } else { sys.REG[coreid][B] = sys.REG[coreid][A] & 0xF; sys.REG[coreid][C] = sys.REG[coreid][A] >> 4; } break;
+    case 0x12: //combine A,B,   C, {IMM}       - combines A and B into C | IMM rules same as split
+     if (sys.Debug == true) { printf("COMBINE\n"); }
+     if ((IMM % 0x2) == 0) { sys.REG[coreid][C] = (sys.REG[coreid][A] << 8) | (sys.REG[coreid][B] & 0xFF); }else{ sys.REG[coreid][C] = (sys.REG[coreid][A] << 4) | (sys.REG[coreid][B] & 0xF); } break;
      
-    case 0x12: //wmem    A,   {B,C}            - Writes to A to MEM[B..C]
+    case 0x13: //wmem    A,   {B,C}            - Writes to A to MEM[B..C]
      if (sys.Debug == true) { printf("WMEM\n");}
      if ((sys.REG[coreid][B]<<16|sys.REG[coreid][C]) > 0x0FFFFFF){
       if (sys.Debug == true) {
@@ -359,9 +404,9 @@ void *CPU_EXEC(int coreid) {
       }
       sys.MEM[sys.REG[coreid][B]<<16|sys.REG[coreid][C]]=sys.REG[coreid][A];
      } else {
-      printf("EMU Service: Invalid Instuction, You cannot write to ROM!\n");
+      printf("[EMU Service] CPU#%i: Invalid Instuction, You cannot write to ROM!\n",coreid);
      } break;
-    case 0x13: //rmem    A,   {B,C}            - Reads from MEM[B..C] to A
+    case 0x14: //rmem    A,   {B,C}            - Reads from MEM[B..C] to A
      if (sys.Debug == true) {
       printf("RMEM\nEMU Service: Reading ");
       switch(sys.REG[coreid][B]<<16|sys.REG[coreid][C]) {
@@ -375,47 +420,52 @@ void *CPU_EXEC(int coreid) {
       printf("[0x%x] to REG:%c\n",  (sys.REG[coreid][B]<<16|sys.REG[coreid][C])%0x3FFFFFF,sys.REG[A]);
      }
      sys.REG[coreid][A]=sys.MEM[sys.REG[coreid][B]<<16|sys.REG[coreid][C]]; break;
-     
-    case 0x14: //hlt     {IMM}                 - Halts or Restarts the System/Device
+    
+    case 0x15: //hlt     {IMM}                 - Halts or Restarts the System/Device
      if (sys.Debug == true) { printf("HALT\n"); }
      printf("EMU Service: Stopping CPU Core #%d\n",coreid); sys.Running[coreid]=false;
      break;
-    case 0x15: //disp    A, {B}, {C}           - Displays up to 3  (FOR DEBUG ONLY)
+    case 0x16: //disp    A, {B}, {C}           - Displays up to 3  (FOR DEBUG ONLY)
      if (sys.Debug == true) { printf("DISPLAY\n"); }
-     
-     break;
-    case 0x16: //flags   A                     - read the CPU's Flags into A
-     if (sys.Debug == true) { printf("FLAG\n"); }
      
      break;
     case 0x17: //icout   A, B                  - returns Instuction Pointer to A..B | example with 0x17F39: A would be 0x0001 and B would be 0x7F39
      if (sys.Debug == true) { printf("ICOUT\n"); }
      
      break;
-    case 0x19: //page    PageID, ROMBANKID     - replaces ROMBANK ID of REG:B with Page ID of REG:A
+    case 0x18: //page    PageID, ROMBANKID     - replaces ROMBANK ID of REG:B with Page ID of REG:A
      if (sys.Debug == true) { printf("PAGE\n"); }
      
      break;
-    case 0x1A: //push    A                     - pushes A, into Stack
+    
+    case 0x19: //push    A                     - pushes A, into Stack
      if (sys.Debug == true) { printf("PUSH\n"); }
-     
-     break;
-    case 0x1B: //pop     A                     - pops Stack, into A
+     if (sys.SP[coreid]-2 < sys.SPMIN[coreid]) {status("[EMU Service] CPU#%i: PANIC! STACK OVERFLOW!\n"); sys.Running[coreid]=false; break;}
+     else {sys.MEM[sys.SP[coreid]--] = sys.REG[coreid][A]&0xFF,sys.MEM[sys.SP[coreid]--] = sys.REG[coreid][A]>>8; } break;
+    case 0x1A: //pop     A                     - pops Stack, into A
      if (sys.Debug == true) { printf("POP\n"); }
-     
-     break;
-    case 0x1C: //call    [Label]               - calls a Label as a Function [uses Stack]
+     if (sys.SP[coreid]+2 > sys.SPMAX[coreid]) {status("[EMU Service] CPU#%i: PANIC! stack empty...\n"); sys.Running[coreid]=false; break;}
+     else {sys.REG[coreid][A] = sys.MEM[sys.SP[coreid]++]<<8|sys.MEM[sys.SP[coreid]++]; } break;
+    case 0x1B: //call    [Label]               - calls a Label as a Function [uses Stack]
      if (sys.Debug == true) { printf("CALL\n"); }
-     
-     break;
-    case 0x1D: //ret                           - returns from a Function [uses Stack]
+     if (sys.SP[coreid]-4 < sys.SPMIN[coreid]) {status("[EMU Service] CPU#%i: PANIC! STACK OVERFLOW!\n"); sys.Running[coreid]=false; break;}
+     else {sys.MEM[sys.SP[coreid]--] = sys.IP[coreid],sys.MEM[sys.SP[coreid]--] = sys.IP[coreid]>>8,sys.MEM[sys.SP[coreid]--] = sys.IP[coreid]>>16,sys.MEM[sys.SP[coreid]--] = sys.IP[coreid]>>32,sys.IP[coreid] = ((C==0)?IMM:(A<<16|B))&0xFFFFFFFFF;} break;
+    case 0x1C: //ret                           - returns from a Function [uses Stack]
      if (sys.Debug == true) { printf("RET\n"); }
-     
+     if (sys.SP[coreid]+4 > sys.SPMAX[coreid]) {status("[EMU Service] CPU#%i: PANIC! stack empty...\n"); sys.Running[coreid]=false; break;}
+      sys.IP[coreid] = sys.MEM[sys.SP[coreid]--]|sys.MEM[sys.SP[coreid]--]<<8|sys.MEM[sys.SP[coreid]--]<<16|sys.MEM[sys.SP[coreid]--]<<32;
      break;
-    case 0x1E: //swap                          - swaps the first 2 Items in Stack
+    case 0x1D: //swap                          - swaps the first 2 Items in Stack
      if (sys.Debug == true) { printf("SWAP\n"); }
-     
+     if (!sys.SP[coreid]+4 > sys.SPMAX[coreid]) {
+      sys.tmp[0]=sys.MEM[sys.SP[coreid]+3],sys.tmp[1]=sys.MEM[sys.SP[coreid]+4];
+      sys.MEM[sys.SP[coreid]+3]=sys.MEM[sys.SP[coreid]+1],sys.MEM[sys.SP[coreid]+4]=sys.MEM[sys.SP[coreid]+2];
+      sys.MEM[sys.SP[coreid]+1]=sys.tmp[0],sys.MEM[sys.SP[coreid]+2]=sys.tmp[1];
+     }
      break;
+    case 0x1E: //led     {A,B,C}/{IMM}         - sets the System's LED color | IMM is #RRGGBB
+     if (sys.Debug == true) { printf("LED\n"); }
+     if (IMM > 0) { sys.LED[0],sys.LED[1],sys.LED[2]=IMM>>16,IMM>>8&0xFF,IMM&0xFF; }else{ sys.LED[0],sys.LED[1],sys.LED[2]=sys.REG[coreid][A],sys.REG[coreid][B],sys.REG[coreid][C]; } break;
     case 0x1F: //gclk    A/Reset               - grabs the current runtime in seconds, to A (or Reset it)
      if (sys.Debug == true) { printf("GCLK\n"); }
      
@@ -427,7 +477,7 @@ void *CPU_EXEC(int coreid) {
     case 0xFF: //nop                           - what you expected me to do something? NOPe!
      if (sys.Debug == true) { printf("NOP\n"); }
      break;
-    default: printf("[EMU Service] CPU#%i: Unknown Operation 0x%2x",coreid,sys.MEM[sys.IP[coreid]]); break;
+    default: status("[EMU Service] CPU#%i: Unknown Operation 0x%2x",coreid,sys.MEM[sys.IP[coreid]]); break;
    } sys.IP[coreid]+=6;
   }
  } printf("EMU Service: Starting CPU initalization...\n");

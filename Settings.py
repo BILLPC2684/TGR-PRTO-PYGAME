@@ -21,6 +21,11 @@ video = [
  ## RGB-Fuzz Emulation ##
  False, # True/False | Default: False
 
+ ## Force Aspect Ratio ##
+ False, # True/False | Default: True
+ 
+ ## AutoDetect ScreenSize ##
+ True,  # True/False | Default: True
  ###########################################
  
  ## Show Inputs ##
@@ -67,13 +72,14 @@ controllers = [[
 ]]
 
 service = [
- ## Enable AutoConnecting to Service ##
+ ### Enable AutoStaring Service ##
  False, # True/False | Default: True
+ ## (if enabeld, MCAddress and MCPort is not used) ##
  
  ## ManualConnect Address ##
  "", #Default: "" or "localhost"
  ## ManualConnect Port ##
- 1213, # 1-65535 | Default: 1213
+ 1214, # 1-65535 | Default: 1213
 ]
 
 ## END OF SETTINGS ##

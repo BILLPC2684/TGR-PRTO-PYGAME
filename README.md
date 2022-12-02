@@ -12,10 +12,10 @@ Offical ROMs: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn'
 3rd Party ROMS: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn't setted up yet! [404]
 
 # Is the current build runnable? (will update)
-## For Build: v0.0.45b Alpha (goal: v0.0.7Xx Alpha)
- - Syntax Errors:   `No`       pygame works, don't recompile the C program yet, it's alittle broken still working on it...
+## For Build: v0.0.46a Alpha (goal: v0.0.7Xx Alpha)
+ - Syntax Errors:   `No`       pygame works? still working in it...
  - Runnable Build:  `Mostly`   [Functional, working on it...]
- - Stable CPU EMU:  `No`       (Not Finihsed Implementing Yet!!)
+ - Stable CPU EMU:  `No`       (Not Finihsed Implementing Yet!! | adding functionality to instructions)
  - Stable Memory:   `Mostly`   (128 MB of RAM | 64 MB of VRAM)
  - Has Video:       `Yes`      (Uses PyGame Window)
  - Has Audio:       `No`       (Requesting Help!)
@@ -36,8 +36,8 @@ Yes for the most part, now people can charge or setup a donation system for thei
 
 # Building the Emulator
  - Theres no Building needed!
- - Have `Python3.8` and `PyGame`[via PIP] installed!
- - Run [`TGR.py`](./TGR.py) with `python3.8` and thats it! ![alt text](./bin/TGR_logo.png)
+ - Have `Python` 3.8 or higher and `PyGame`[via PIP] installed!
+ - Run [`TGR.py`](./TGR.py) with `Python3` and thats it! ![alt text](./bin/TGR_logo.png)
 
 
 # How to make Programs Assembly Files and Compile ROMs:
