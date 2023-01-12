@@ -22,14 +22,18 @@ video = [
  False, # True/False | Default: False
 
  ## Force Aspect Ratio ##
- False, # True/False | Default: True
+ True,  # True/False | Default: True
  
  ## AutoDetect ScreenSize ##
  True,  # True/False | Default: True
+ 
  ###########################################
  
  ## Show Inputs ##
- True, # True/False | Default: False
+ True,  # True/False | Default: False
+ 
+ ## HUD Occpacity ##
+  75,   #   0 - 100  |75 Default
 ]
 
 controllers = [[
