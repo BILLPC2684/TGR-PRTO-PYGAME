@@ -12,11 +12,11 @@ Offical ROMs: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn'
 3rd Party ROMS: ~~https://Koranva-Forest.com/TheGameRazer/forums~~ the Forums isn't setted up yet! [404]
 
 # Is the current build runnable? (will update)
-## For Build: v0.0.46a Alpha (goal: v0.0.7Xx Alpha)
- - Syntax Errors:   `No`       pygame works? still working in it...
- - Runnable Build:  `Mostly`   [Functional, working on it...]
+## For Build: v0.0.46c Alpha (goal: v0.0.48x Alpha)
+ - Syntax Errors:   `No`       !!Please be aware this is a Canary Build!!
+ - Runnable Build:  `Mostly`   [Pygame Yes, rewriting the C service...]
  - Stable CPU EMU:  `No`       (Not Finihsed Implementing Yet!! | adding functionality to instructions)
- - Stable Memory:   `Mostly`   (128 MB of RAM | 64 MB of VRAM)
+ - Stable Memory:   `N/A`      (due to service rewrite can't tell)
  - Has Video:       `Yes`      (Uses PyGame Window)
  - Has Audio:       `No`       (Requesting Help!)
  - Has Inputs:      `Yes`      (PyGame Input | Check the [Settings.py](./Settings.py) File)
