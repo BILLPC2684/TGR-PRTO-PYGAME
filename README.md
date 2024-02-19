@@ -1,9 +1,13 @@
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/BILLPC2684)\
 ![alt text](http://koranva-forest.com/TheGameRazer/TGR-logo(8x).png)
 
+# We moved over to https://github.com/BILLPC2684/TGR-PRTO-RAYLIB
+
 # TGR-PRTO-PYGAME
 TheGameRazer is a modern, retro 16-bit emulator(Fantasy Console) made in Python using PyGame\
 this is still in prototype stages...
+
+# goto BILLPC2684/TGR-PRTO-RAYLIB
 
 # Websites:
 Offical Website: https://Koranva-Forest.com \
